@@ -1,9 +1,7 @@
 from sqlalchemy import text
-from sqlalchemy.orm import declarative_base
 
-from mysql_database.database import ConnectionFactory
-
-Base = declarative_base()
+from database.engine import ConnectionFactory
+from database.schemas import Base
 
 
 class SqlResourceManager:

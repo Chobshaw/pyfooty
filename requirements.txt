@@ -1,0 +1,3 @@
+psycopg
+mysql-connector-python
+sqlalchemy

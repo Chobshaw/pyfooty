@@ -8,25 +8,25 @@ class ListedEnum(Enum):
         return list(map(lambda e: e.value, cls))
 
 
-class Position(ListedEnum):
+class Position(Enum):
     GOALKEEPER = 'goalkeeper'
     DEFENDER = 'defender'
     MIDFIELDER = 'midfielder'
     FORWARD = 'forward'
 
 
-class CompetitionType(ListedEnum):
+class CompetitionType(Enum):
     DOMESTIC = 'domestic'
     INTERNATIONAL = 'international'
 
 
-class CompetitionFormat(ListedEnum):
+class CompetitionFormat(Enum):
     FRIENDLY = 'friendly'
     LEAGUE = 'league'
     KNOCKOUT = 'knockout'
     GROUP_KNOCKOUT = 'group_knockout'
 
 
-class TeamType(ListedEnum):
+class TeamType(Enum):
     LOCAL = 'local'
     NATIONAL = 'national'
