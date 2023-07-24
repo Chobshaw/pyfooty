@@ -2,7 +2,6 @@ from enum import Enum
 
 
 class ListedEnum(Enum):
-
     @classmethod
     def list(cls):
         return list(map(lambda e: e.value, cls))
@@ -30,3 +29,6 @@ class CompetitionFormat(Enum):
 class TeamType(Enum):
     LOCAL = 'local'
     NATIONAL = 'national'
+
+
+print(Position['goalkeeper'])

@@ -3,7 +3,12 @@ from datetime import date
 from sqlalchemy import String, Date, ForeignKey, Integer, Enum
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-from database.enums import Position, TeamType, CompetitionType, CompetitionFormat
+from database.enums import (
+    Position,
+    TeamType,
+    CompetitionType,
+    CompetitionFormat,
+)
 
 
 class Base(DeclarativeBase):
@@ -18,10 +23,6 @@ class PlayerTable(Base):
     date_of_birth: Mapped[date] = mapped_column(Date())
     country: Mapped[str] = mapped_column(String(30))
 
-    player_instances: Mapped[list['PlayerInstanceTable']] = relationship(
-        back_populates='player', cascade='all, delete-orphan'
-    )
-
 
 class PlayerInstanceTable(Base):
     __tablename__ = 'player_instance'
@@ -32,7 +33,7 @@ class PlayerInstanceTable(Base):
     fixture_id: Mapped[int] = mapped_column(ForeignKey('fixture.id'))
     position: Mapped[Position] = mapped_column(Enum(Position))
 
-    player: Mapped['PlayerTable'] = relationship(back_populates='player_instances')
+    player: Mapped['PlayerTable'] = relationship()
     team: Mapped['TeamInstanceTable'] = relationship(back_populates='players')
 
 
@@ -45,8 +46,6 @@ class TeamTable(Base):
     type: Mapped[TeamType] = mapped_column(Enum(TeamType))
     year_founded: Mapped[int] = mapped_column(Integer())
 
-    team_instances: Mapped[list['TeamInstanceTable']] = relationship(back_populates='team')
-
 
 class TeamInstanceTable(Base):
     __tablename__ = 'team_instance'
@@ -55,8 +54,10 @@ class TeamInstanceTable(Base):
     team_id: Mapped[int] = mapped_column(ForeignKey('team.id'))
     fixture_id: Mapped[int] = mapped_column(ForeignKey('fixture.id'))
 
-    team: Mapped['TeamTable'] = relationship(back_populates='team_instances')
-    players: Mapped[list['PlayerInstanceTable']] = relationship(back_populates='team')
+    team: Mapped['TeamTable'] = relationship()
+    players: Mapped[list['PlayerInstanceTable']] = relationship(
+        back_populates='team'
+    )
 
 
 class CompetitionTable(Base):
@@ -64,8 +65,12 @@ class CompetitionTable(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(30))
-    competition_type: Mapped[CompetitionType] = mapped_column(Enum(CompetitionType))
-    competition_format: Mapped[CompetitionFormat] = mapped_column(Enum(CompetitionFormat))
+    competition_type: Mapped[CompetitionType] = mapped_column(
+        Enum(CompetitionType)
+    )
+    competition_format: Mapped[CompetitionFormat] = mapped_column(
+        Enum(CompetitionFormat)
+    )
     team_type: Mapped[TeamType] = mapped_column(Enum(TeamType))
 
 
@@ -103,6 +108,10 @@ class FixtureTable(Base):
 
     season: Mapped['SeasonTable'] = relationship()
     competition: Mapped['CompetitionTable'] = relationship()
-    home_team: Mapped['TeamInstanceTable'] = relationship(foreign_keys=home_team_id)
-    away_team: Mapped['TeamInstanceTable'] = relationship(foreign_keys=away_team_id)
+    home_team: Mapped['TeamInstanceTable'] = relationship(
+        foreign_keys=home_team_id
+    )
+    away_team: Mapped['TeamInstanceTable'] = relationship(
+        foreign_keys=away_team_id
+    )
     venue: Mapped['VenueTable'] = relationship()

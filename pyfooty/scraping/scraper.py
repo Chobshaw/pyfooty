@@ -6,9 +6,10 @@ import requests
 
 import pandas as pd
 from bs4 import BeautifulSoup
-from entities.season import Season
+from entities.season import Season, season_range
 
 from global_utils import constants
+from _exceptions import SoupNotFoundError, TagNotFoundError, UrlNotFoundError
 
 GENDER_TO_REGEX_PATTERN = {'male': r'^M$', 'female': r'^F$', 'both': r'^(M|F)$'}
 
@@ -21,13 +22,34 @@ def _get_soup(url: str) -> BeautifulSoup:
     return BeautifulSoup(data.text, 'html.parser')
 
 
+def _find_rel_url(soup: BeautifulSoup, page_string: str) -> str:
+    if soup is None:
+        raise SoupNotFoundError
+    anchor_tag = soup.find('a', string=page_string)
+    if anchor_tag is None:
+        raise TagNotFoundError('a', attrs={'string': page_string})
+    return anchor_tag.get('href')
+
+
 @cache
 def _find_url(
-    parent_url: str, page_string: str, *, base_url: Optional[str] = None
+    parent_url: str,
+    page_string: str,
+    table_id: Optional[str] = None,
+    *,
+    base_url: Optional[str] = None,
 ) -> str:
     base_url = parent_url if not base_url else base_url
     soup = _get_soup(parent_url)
-    rel_url = soup.find('a', string=page_string).get('href')
+
+    try:
+        if table_id is not None:
+            table = soup.find('table', id=table_id)
+            rel_url = _find_rel_url(table, page_string)
+        else:
+            rel_url = _find_rel_url(soup, page_string)
+    except (SoupNotFoundError, TagNotFoundError):
+        raise UrlNotFoundError(parent_url, page_string)
     return base_url + rel_url
 
 
@@ -55,7 +77,7 @@ def get_competitions(
     country: Optional[str] = None,
     gender: Literal['male', 'female', 'both'] = 'male',
 ) -> list[str]:
-    soup = _get_soup(url=_COMPETITIONS_URL)
+    soup = _get_soup(_COMPETITIONS_URL)
 
     competitions = set()
     for row in soup.find_all('tr'):
@@ -93,6 +115,16 @@ def process_competition(
         page_string=constants.COMPETITION_NAMES_DICT[competition],
     )
     soup = _get_soup(competition_url)
+    for season in season_range(from_season, to_season, inclusive='both'):
+        try:
+            season_url = _find_url_from_base(
+                parent_url=competition_url,
+                page_string=str(season),
+                table_id='seasons',
+            )
+        except UrlNotFoundError:
+            logger.warning(f'No data for {season} {competition} season.')
+            continue
 
 
 def scrape_data(
@@ -102,9 +134,9 @@ def scrape_data(
 ):
     for competition in competitions:
         if competition not in constants.COMPETITION_NAMES_DICT:
-            logger.warn(f'Invalid competition: {competition}')
+            logger.warning(f'Invalid competition: {competition}')
             continue
         process_competition(competition, from_season, to_season)
 
 
-scrape_data(competitions=['bundesliga'], from_date='2022-12-12')
+scrape_data(competitions=['premier_league'], from_season=2022)

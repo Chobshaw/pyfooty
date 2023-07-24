@@ -9,6 +9,7 @@ from scraping.utils import split_on_dash_or_endash
 
 
 MINIMUM_VALID_YEAR = 2_000
+ENDASH = chr(8211)
 
 
 @cache
@@ -76,7 +77,7 @@ class Season:
             )
         if dash_type == 'dash':
             return self.__str__()
-        return f'{self.from_year}{ord(8211)}{self.to_year}'
+        return f'{self.from_year}{ENDASH}{self.to_year}'
 
     def increment(self, years: int) -> Season:
         return Season(self.from_year + years)
