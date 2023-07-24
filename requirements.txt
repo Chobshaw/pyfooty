@@ -1,3 +1,9 @@
+attrs
+pandas
+requests
+lxml
+html5lib
+bs4
 psycopg
 mysql-connector-python
 sqlalchemy
