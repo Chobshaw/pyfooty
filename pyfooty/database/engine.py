@@ -1,5 +1,6 @@
-from contextlib import contextmanager, AbstractContextManager
+from contextlib import AbstractContextManager, contextmanager
 from logging import getLogger
+from collections.abc import Iterator
 from typing import Callable
 
 from sqlalchemy import URL, create_engine, Connection
@@ -15,15 +16,11 @@ class Database:
     def __init__(self, url_object: URL) -> None:
         self._engine = create_engine(url_object)
         self._session_factory = scoped_session(
-            sessionmaker(
-                bind=self._engine,
-                autocommit=False,
-                autoflush=False
-            )
+            sessionmaker(bind=self._engine, autocommit=False, autoflush=False)
         )
 
     @contextmanager
-    def session(self) -> SessionFactory:
+    def session(self) -> Iterator[Session]:
         session: Session = self._session_factory()
         try:
             yield session
@@ -35,7 +32,7 @@ class Database:
             session.close()
 
     @contextmanager
-    def connection(self) -> ConnectionFactory:
+    def connection(self) -> Iterator[Connection]:
         connection: Connection = self._engine.connect()
         try:
             yield connection

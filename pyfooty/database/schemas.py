@@ -1,21 +1,31 @@
 from datetime import date
+from typing import ClassVar, Optional, Self
 
-from sqlalchemy import String, Date, ForeignKey, Integer, Enum
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy import LargeBinary, String, Date, ForeignKey, Integer, Enum
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    MappedAsDataclass,
+    Mapped,
+    mapped_column,
+    relationship,
+)
 
 from database.enums import (
+    Gender,
     Position,
     TeamType,
     CompetitionType,
     CompetitionFormat,
 )
+from entities.competition import CompetitionData
+from entities.entity import Entity
 
 
-class Base(DeclarativeBase):
+class Base(MappedAsDataclass, DeclarativeBase):
     pass
 
 
-class PlayerTable(Base):
+class Player(Base):
     __tablename__ = 'player'
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -24,7 +34,7 @@ class PlayerTable(Base):
     country: Mapped[str] = mapped_column(String(30))
 
 
-class PlayerInstanceTable(Base):
+class PlayerInstance(Base):
     __tablename__ = 'player_instance'
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -33,38 +43,45 @@ class PlayerInstanceTable(Base):
     fixture_id: Mapped[int] = mapped_column(ForeignKey('fixture.id'))
     position: Mapped[Position] = mapped_column(Enum(Position))
 
-    player: Mapped['PlayerTable'] = relationship()
-    team: Mapped['TeamInstanceTable'] = relationship(back_populates='players')
+    player: Mapped['Player'] = relationship()
+    team: Mapped['TeamInstance'] = relationship(back_populates='players')
 
 
-class TeamTable(Base):
+class Team(Base):
     __tablename__ = 'team'
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(30))
+    gender: Mapped[Gender] = mapped_column(Enum(Gender))
     country: Mapped[str] = mapped_column(String(30))
     type: Mapped[TeamType] = mapped_column(Enum(TeamType))
     year_founded: Mapped[int] = mapped_column(Integer())
+    logo: Mapped[LargeBinary] = mapped_column(LargeBinary())
 
 
-class TeamInstanceTable(Base):
+class TeamInstance(Base):
     __tablename__ = 'team_instance'
 
     id: Mapped[int] = mapped_column(primary_key=True)
     team_id: Mapped[int] = mapped_column(ForeignKey('team.id'))
     fixture_id: Mapped[int] = mapped_column(ForeignKey('fixture.id'))
 
-    team: Mapped['TeamTable'] = relationship()
-    players: Mapped[list['PlayerInstanceTable']] = relationship(
+    team: Mapped['Team'] = relationship()
+    players: Mapped[list['PlayerInstance']] = relationship(
         back_populates='team'
     )
 
 
-class CompetitionTable(Base):
+class Competition(Base):
     __tablename__ = 'competition'
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(
+        init=False, primary_key=True, autoincrement=True
+    )
     name: Mapped[str] = mapped_column(String(30))
+    gender: Mapped[Gender] = mapped_column(Enum(Gender))
+    country: Mapped[Optional[str]] = mapped_column(String(30))
+    tier: Mapped[Optional[int]] = mapped_column(Integer())
     competition_type: Mapped[CompetitionType] = mapped_column(
         Enum(CompetitionType)
     )
@@ -72,9 +89,26 @@ class CompetitionTable(Base):
         Enum(CompetitionFormat)
     )
     team_type: Mapped[TeamType] = mapped_column(Enum(TeamType))
+    attribute_whitelist: ClassVar[list[str]] = [
+        'name',
+        'gender',
+        'country',
+        'tier',
+        'competition_type',
+        'competition_format',
+        'team_type',
+    ]
+
+    @classmethod
+    # TODO: Make this a Mixin
+    def from_data(cls, data: Entity) -> Self:
+        attributes = {
+            attr: getattr(data, attr) for attr in cls.attribute_whitelist
+        }
+        return cls(**attributes)
 
 
-class SeasonTable(Base):
+class Season(Base):
     __tablename__ = 'season'
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -82,19 +116,7 @@ class SeasonTable(Base):
     to_year: Mapped[int] = mapped_column(Integer())
 
 
-class VenueTable(Base):
-    __tablename__ = 'venue'
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(30))
-    country: Mapped[str] = mapped_column(String(30))
-    city: Mapped[str] = mapped_column(String(30))
-    area: Mapped[str] = mapped_column(String(30), nullable=True)
-    street: Mapped[str] = mapped_column(String(30))
-    post_code: Mapped[str] = mapped_column(String(10), nullable=True)
-
-
-class FixtureTable(Base):
+class Fixture(Base):
     __tablename__ = 'fixture'
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -104,14 +126,11 @@ class FixtureTable(Base):
     home_team_id: Mapped[int] = mapped_column(ForeignKey('team_instance.id'))
     away_team_id: Mapped[int] = mapped_column(ForeignKey('team_instance.id'))
     game_week: Mapped[int] = mapped_column(Integer())
-    venue_id: Mapped[int] = mapped_column(ForeignKey('venue.id'))
+    venue: Mapped[str] = mapped_column(String(30))
 
-    season: Mapped['SeasonTable'] = relationship()
-    competition: Mapped['CompetitionTable'] = relationship()
-    home_team: Mapped['TeamInstanceTable'] = relationship(
-        foreign_keys=home_team_id
+    season: Mapped['Season'] = relationship(foreign_keys=season_id)
+    competition: Mapped['Competition'] = relationship(
+        foreign_keys=competition_id
     )
-    away_team: Mapped['TeamInstanceTable'] = relationship(
-        foreign_keys=away_team_id
-    )
-    venue: Mapped['VenueTable'] = relationship()
+    home_team: Mapped['TeamInstance'] = relationship(foreign_keys=home_team_id)
+    away_team: Mapped['TeamInstance'] = relationship(foreign_keys=away_team_id)

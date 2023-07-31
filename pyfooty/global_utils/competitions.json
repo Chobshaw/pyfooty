@@ -1,1 +1,32 @@
-{}
+{
+  "premier_league": {
+    "name": "premier_league",
+    "alt_name": "Premier League",
+    "gender": "male",
+    "team_type": "club",
+    "competition_type": "domestic",
+    "competition_format": "league",
+    "country": "england",
+    "tier": 1
+  },
+  "bundesliga": {
+    "name": "bundesliga",
+    "alt_name": "Fußball-Bundesliga",
+    "gender": "male",
+    "team_type": "club",
+    "competition_type": "domestic",
+    "competition_format": "league",
+    "country": "germany",
+    "tier": 1
+  },
+  "championship": {
+    "name": "championship",
+    "alt_name": "EFL Championship",
+    "gender": "male",
+    "team_type": "club",
+    "competition_type": "domestic",
+    "competition_format": "league",
+    "country": "england",
+    "tier": 2
+  }
+}

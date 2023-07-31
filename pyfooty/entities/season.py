@@ -5,7 +5,7 @@ from functools import cache
 from typing import Iterator, Literal, Optional, Self
 from attrs import frozen, field, validators
 
-from scraping.utils import split_on_dash_or_endash
+from scraping._local_utils import _split_on_dash_or_endash
 
 
 MINIMUM_VALID_YEAR = 2_000
@@ -17,7 +17,7 @@ def get_current_year() -> int:
     return datetime.utcnow().year
 
 
-@frozen
+@frozen(order=True)
 class Season:
     from_year: int = field(
         converter=int,
@@ -30,23 +30,6 @@ class Season:
 
     def __str__(self) -> str:
         return f'{self.from_year}-{self.to_year}'
-
-    def __eq__(self, other: Season) -> bool:
-        return (
-            self.from_year == other.from_year and self.to_year == other.to_year
-        )
-
-    def __lt__(self, other: Season) -> bool:
-        return self.from_year < other.from_year
-
-    def __le__(self, other: Season) -> bool:
-        return self.from_year <= other.from_year
-
-    def __gt__(self, other: Season) -> bool:
-        return self.from_year > other.from_year
-
-    def __ge__(self, other: Season) -> bool:
-        return self.from_year >= other.from_year
 
     @from_year.default
     def _from_year_factory(self) -> int:
@@ -65,7 +48,7 @@ class Season:
 
     @classmethod
     def from_string(cls, season: str) -> Self:
-        split_season = [int(year) for year in split_on_dash_or_endash(season)]
+        split_season = [int(year) for year in _split_on_dash_or_endash(season)]
         if len(split_season) == 1:
             return cls(split_season[0])
         return cls(split_season[0], split_season[1])
