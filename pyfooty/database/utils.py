@@ -1,16 +1,16 @@
 import json
 from pathlib import Path
 from database.enums import CompetitionFormat, CompetitionType, Gender, TeamType
-from database.schemas import Competition
+from database.schemas import CompetitionModel
 
 
-def get_competition_dict() -> dict[str, Competition]:
+def get_competition_dict() -> dict[str, CompetitionModel]:
     pyfooty_path = Path(__file__).parent.parent
     competitions_file_path = pyfooty_path / 'global_utils/competitions.json'
     with open(competitions_file_path, 'r') as file:
         competitions_dict = json.load(file)
     for competition_name, data in competitions_dict.items():
-        competitions_dict[competition_name] = Competition(
+        competitions_dict[competition_name] = CompetitionModel(
             name=data['name'],
             gender=Gender.from_value(data['gender']),
             country=data['country'],

@@ -1,27 +1,59 @@
-from sqlalchemy import select
+from collections.abc import Iterable
+
+from sqlalchemy import and_, select
+
 from database.engine import SessionFactory
 from database.exceptions import CompetitionNotFoundError
-from database.schemas import Competition
-from entities.competition import CompetitionData
+from database.schemas import BaseModel, CompetitionModel, SeasonModel
+from entities.competition import Competition
+from entities.entity import Entity
+from entities.season import Season
 
 
 class FootballRepository:
-    def __init__(self, session_factory: SessionFactory):
+    def __init__(self, session_factory: SessionFactory) -> None:
         self.session_factory = session_factory
 
-    def add_competition(self, data: CompetitionData) -> Competition:
-        competition = Competition.from_data(data)
+    def _add_entity(self, entity: Entity, model: BaseModel) -> Entity:
+        entity_model = model.from_entity(entity)
         with self.session_factory() as session:
-            session.add(competition)
+            session.add(entity_model)
             session.commit()
-            session.refresh(competition)
-            return competition
+            session.refresh(entity_model)
+            return entity_model.to_entity()
+
+    def add_competition(self, competition: Competition) -> Competition:
+        return self._add_entity(entity=competition, model=CompetitionModel)
 
     def get_competition_by_name(self, name: str) -> Competition:
         with self.session_factory() as session:
-            competition = session.scalars(
-                select(Competition).where(Competition.name == name)
+            competition_model = session.scalars(
+                select(CompetitionModel).where(CompetitionModel.name == name)
             ).first()
-            if not competition:
+            if not competition_model:
                 raise CompetitionNotFoundError(name)
-            return competition
+            return competition_model.to_entity()
+
+    def add_season(self, season: Season) -> Season:
+        return self._add_entity(entity=season, model=SeasonModel)
+
+    def _get_or_create_entity(
+        self, entity: Entity, model: BaseModel, fields: Iterable[str]
+    ) -> Entity:
+        with self.session_factory() as session:
+            entity_model = session.scalars(
+                select(model).where(
+                    and_(
+                        getattr(model, field) == getattr(entity, field)
+                        for field in fields
+                    )
+                )
+            ).one_or_none()
+        if entity_model:
+            return entity_model.to_entity()
+        return self._add_entity(entity=entity, model=model)
+
+    def get_or_create_season(self, season: Season) -> Season:
+        return self._get_or_create_entity(
+            entity=season, model=SeasonModel, fields=['from_year']
+        )

@@ -1,17 +1,20 @@
 import logging
 import re
-from typing import Iterable
+from typing import Iterable, Literal
 import requests
-from entities.competition import CompetitionData, get_competition_dict
+from entities.competition import Competition, get_competition_dict
 
-from entities.population import Population
 from entities.season import Season, season_range
 
 from global_utils import constants
 from scraping._local_utils import _get_soup, _find_url_from_base
-from scraping._exceptions import UrlNotFoundError
+from scraping._exceptions import UrlNotFoundError, CompetitionNotSupportedError
 
 logger = logging.getLogger(__name__)
+
+ScrapingLocation = Literal[
+    'england', 'france', 'germany', 'italy', 'portugal', 'spain'
+]
 
 
 def _has_team_name(tag):
@@ -19,10 +22,23 @@ def _has_team_name(tag):
 
 
 class FootballScraper:
+    LOCATION_URL_EXTENSION_DICT = {
+        'england': 'en',
+        'france': 'fr',
+        'germany': 'de',
+        'italy': 'it',
+        'portugal': 'pt',
+        'spain': 'es',
+    }
     COMPETITION_DICT = get_competition_dict()
     _COMPETITIONS_URL = _find_url_from_base(
         parent_url=constants.BASE_DATA_URL, page_string='Competitions'
     )
+
+    def __init__(self, *, location: ScrapingLocation = 'england') -> None:
+        self.location_url = self.LOCATION_URL_EXTENSION_DICT.get(location)
+        if self.location_url is None:
+            raise ValueError(f'Invalid location: {location}.')
 
     def process_team(self, team_url: str):
         team_data_url = _find_url_from_base(
@@ -60,7 +76,7 @@ class FootballScraper:
 
     def process_competition(
         self,
-        competition: CompetitionData,
+        competition: Competition,
         from_season: Season | str | int,
         to_season: Season | str | int = Season(),
     ):
@@ -86,5 +102,8 @@ class FootballScraper:
                 continue
             self.process_competition(competition, from_season, to_season)
 
-    def scrape_competition(self, competition_name: str) -> CompetitionData:
-        return self.COMPETITION_DICT[competition_name]
+    def scrape_competition(self, competition_name: str) -> Competition:
+        competition = self.COMPETITION_DICT.get(competition_name)
+        if competition is None:
+            raise CompetitionNotSupportedError(competition_name)
+        return competition

@@ -1,5 +1,4 @@
-from enum import Enum
-from typing import Self
+from enum import Enum, StrEnum, auto
 
 
 class ListedEnum(Enum):
@@ -8,39 +7,30 @@ class ListedEnum(Enum):
         return list(map(lambda e: e.value, cls))
 
 
-class ExtendedEnum(Enum):
-    @classmethod
-    def from_value(cls, value: str) -> Self:
-        for item in cls:
-            if item.value == value:
-                return item
-        raise ValueError(f'Value not found in enum: {cls.__name__}')
+class Gender(StrEnum):
+    MALE = auto()
+    FEMALE = auto()
 
 
-class Gender(ExtendedEnum):
-    MALE = 'male'
-    FEMALE = 'female'
+class Position(StrEnum):
+    GOALKEEPER = auto()
+    DEFENDER = auto()
+    MIDFIELDER = auto()
+    FORWARD = auto()
 
 
-class Position(Enum):
-    GOALKEEPER = 'goalkeeper'
-    DEFENDER = 'defender'
-    MIDFIELDER = 'midfielder'
-    FORWARD = 'forward'
+class CompetitionType(StrEnum):
+    DOMESTIC = auto()
+    INTERNATIONAL = auto()
 
 
-class CompetitionType(ExtendedEnum):
-    DOMESTIC = 'domestic'
-    INTERNATIONAL = 'international'
+class CompetitionFormat(StrEnum):
+    FRIENDLY = auto()
+    LEAGUE = auto()
+    KNOCKOUT = auto()
+    GROUP_KNOCKOUT = auto()
 
 
-class CompetitionFormat(ExtendedEnum):
-    FRIENDLY = 'friendly'
-    LEAGUE = 'league'
-    KNOCKOUT = 'knockout'
-    GROUP_KNOCKOUT = 'group_knockout'
-
-
-class TeamType(ExtendedEnum):
-    CLUB = 'club'
-    NATIONAL = 'national'
+class TeamType(StrEnum):
+    CLUB = auto()
+    NATIONAL = auto()

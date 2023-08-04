@@ -19,6 +19,7 @@ def get_current_year() -> int:
 
 @frozen(order=True)
 class Season:
+    id: Optional[int] = field(default=None, kw_only=True, order=False)
     from_year: int = field(
         converter=int,
         validator=[

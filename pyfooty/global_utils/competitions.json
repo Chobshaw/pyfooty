@@ -7,7 +7,11 @@
     "competition_type": "domestic",
     "competition_format": "league",
     "country": "england",
-    "tier": 1
+    "tier": 1,
+    "url_info": {
+      "number": 9,
+      "name": "Premier-League"
+    }
   },
   "bundesliga": {
     "name": "bundesliga",
@@ -17,7 +21,11 @@
     "competition_type": "domestic",
     "competition_format": "league",
     "country": "germany",
-    "tier": 1
+    "tier": 1,
+    "url_info": {
+      "number": 20,
+      "name": "Bundesliga"
+    }
   },
   "championship": {
     "name": "championship",
@@ -27,6 +35,10 @@
     "competition_type": "domestic",
     "competition_format": "league",
     "country": "england",
-    "tier": 2
+    "tier": 2,
+    "url_info": {
+      "number": 10,
+      "name": "Championship"
+    }
   }
 }

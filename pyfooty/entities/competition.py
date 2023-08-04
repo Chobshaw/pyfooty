@@ -1,6 +1,8 @@
 import json
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Optional
+
 from attrs import field, frozen, validators
 
 from database.enums import (
@@ -8,26 +10,25 @@ from database.enums import (
     CompetitionType,
     Gender,
     TeamType,
-    ExtendedEnum,
 )
-
-
-def str_to_enum(string: str, enum: ExtendedEnum) -> ExtendedEnum:
-    return enum.from_value(string)
+from entities.dict_mixin import DictMixin
 
 
 @frozen
-class CompetitionData:
+class CompetitionUrlInfo(DictMixin):
+    number: int
+    name: str
+
+
+@frozen(kw_only=True)
+class Competition(DictMixin):
+    id: Optional[int] = field(default=None)
     name: str
     alt_name: str
-    gender: Gender = field(converter=lambda x: str_to_enum(x, Gender))
-    team_type: TeamType = field(converter=lambda x: str_to_enum(x, TeamType))
-    competition_type: CompetitionType = field(
-        converter=lambda x: str_to_enum(x, CompetitionType)
-    )
-    competition_format: CompetitionFormat = field(
-        converter=lambda x: str_to_enum(x, CompetitionFormat)
-    )
+    gender: Gender
+    team_type: TeamType
+    competition_type: CompetitionType = field()
+    competition_format: CompetitionFormat = field()
     country: Optional[str] = field(
         default=None, validator=validators.optional(validators.instance_of(str))
     )
@@ -37,6 +38,7 @@ class CompetitionData:
             [validators.instance_of(int), validators.ge(1)]
         ),
     )
+    url_info: CompetitionUrlInfo
 
     def __str__(self) -> str:
         return (
@@ -72,15 +74,18 @@ class CompetitionData:
             )
 
 
-def get_competition_dict() -> dict[str, CompetitionData]:
+def get_competition_dict() -> dict[str, Competition]:
     pyfooty_path = Path(__file__).parent.parent
     competitions_file_path = pyfooty_path / 'global_utils/competitions.json'
     with open(competitions_file_path, 'r') as file:
         competitions_dict = json.load(file)
     for competition_name, data in competitions_dict.items():
-        competitions_dict[competition_name] = CompetitionData(**data)
+        competitions_dict[competition_name] = Competition.from_dict(data)
     return competitions_dict
 
 
-for key, val in get_competition_dict().items():
-    print(key, str(val), repr(val))
+if __name__ == '__main__':
+    competition_dict = get_competition_dict()
+    for name, competition in competition_dict.items():
+        print(name, repr(competition))
+        print(competition.to_dict())

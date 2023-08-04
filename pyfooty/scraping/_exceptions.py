@@ -23,3 +23,11 @@ class UrlNotFoundError(Exception):
             f'Url, with parent: {parent_url}, '
             f'and page identifier: {page_string}, not found.'
         )
+
+
+class CompetitionNotSupportedError(Exception):
+    def __init__(self, competition_name: str) -> None:
+        super().__init__(
+            f'Data for competition: {competition_name} unavailable'
+            'as it is not currently supported.'
+        )
