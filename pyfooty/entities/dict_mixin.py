@@ -32,11 +32,19 @@ class Field(NamedTuple):
     type: Optional[type] = None
 
 
-def instance_dict(instance: Any) -> dict[str, Any]:
+def instance_dict(
+    instance: Any, *, deep: bool = True, flatten: bool = False
+) -> dict[str, Any]:
+    # TODO: Add legacy class and flatten implementation
     if dataclasses.is_dataclass(instance):
+        if not deep:
+            return dict(
+                (field.name, getattr(instance, field.name))
+                for field in dataclasses.fields(instance)
+            )
         return dataclasses.asdict(instance)
     if attrs.has(instance):
-        return attrs.asdict(instance)
+        return attrs.asdict(instance, recurse=deep)
     return vars(instance)
 
 
@@ -111,5 +119,5 @@ class DictMixin:
             attributes[attr_name] = cls._get_attribute(attr_val, field.type)
         return cls(**attributes)
 
-    def to_dict(self) -> dict:
-        return instance_dict(self)
+    def to_dict(self, deep: bool = True) -> dict:
+        return instance_dict(self, deep=deep)

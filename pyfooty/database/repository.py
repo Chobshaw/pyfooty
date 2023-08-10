@@ -14,16 +14,18 @@ class FootballRepository:
     def __init__(self, session_factory: SessionFactory) -> None:
         self.session_factory = session_factory
 
-    def _add_entity(self, entity: Entity, model: BaseModel) -> Entity:
-        entity_model = model.from_entity(entity)
+    def _add_entity(
+        self, entity: Entity, model_type: type[BaseModel]
+    ) -> Entity:
+        model = model_type.from_entity(entity)
         with self.session_factory() as session:
-            session.add(entity_model)
+            session.add(model)
             session.commit()
-            session.refresh(entity_model)
-            return entity_model.to_entity()
+            # session.refresh(entity_model)
+            return model.to_entity()
 
     def add_competition(self, competition: Competition) -> Competition:
-        return self._add_entity(entity=competition, model=CompetitionModel)
+        return self._add_entity(entity=competition, model_type=CompetitionModel)
 
     def get_competition_by_name(self, name: str) -> Competition:
         with self.session_factory() as session:
@@ -35,7 +37,7 @@ class FootballRepository:
             return competition_model.to_entity()
 
     def add_season(self, season: Season) -> Season:
-        return self._add_entity(entity=season, model=SeasonModel)
+        return self._add_entity(entity=season, model_type=SeasonModel)
 
     def _get_or_create_entity(
         self, entity: Entity, model: BaseModel, fields: Iterable[str]
@@ -51,7 +53,7 @@ class FootballRepository:
             ).one_or_none()
         if entity_model:
             return entity_model.to_entity()
-        return self._add_entity(entity=entity, model=model)
+        return self._add_entity(entity=entity, model_type=model)
 
     def get_or_create_season(self, season: Season) -> Season:
         return self._get_or_create_entity(

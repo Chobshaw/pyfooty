@@ -5,6 +5,8 @@ from typing import Protocol
 
 from attrs import frozen
 
+from entities.dict_mixin import DictMixin
+
 
 def get_deterministic_hash(item: str) -> int:
     return int(hashlib.md5(item.encode('utf-8')).hexdigest()[:15], base=16)
@@ -23,5 +25,5 @@ class EntityOld(ABC):
         return get_deterministic_hash(id_string)
 
 
-class Entity(Protocol):
+class Entity(DictMixin):
     ...

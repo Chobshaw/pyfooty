@@ -1,5 +1,4 @@
 import json
-from collections.abc import Mapping
 from pathlib import Path
 from typing import Optional
 
@@ -11,17 +10,20 @@ from database.enums import (
     Gender,
     TeamType,
 )
-from entities.dict_mixin import DictMixin
+from entities.entity import Entity
 
 
 @frozen
-class CompetitionUrlInfo(DictMixin):
+class CompetitionUrlInfo(Entity):
     number: int
     name: str
 
+    def __composite_values__(self) -> tuple[int, str]:
+        return self.number, self.name
+
 
 @frozen(kw_only=True)
-class Competition(DictMixin):
+class Competition(Entity):
     id: Optional[int] = field(default=None)
     name: str
     alt_name: str
@@ -88,4 +90,4 @@ if __name__ == '__main__':
     competition_dict = get_competition_dict()
     for name, competition in competition_dict.items():
         print(name, repr(competition))
-        print(competition.to_dict())
+        print(competition.to_dict(deep=False))

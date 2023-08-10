@@ -1,13 +1,20 @@
 from datetime import date
 from typing import Optional, Self
-from attrs import asdict
 
-from sqlalchemy import LargeBinary, String, Date, ForeignKey, Integer, Enum
+from sqlalchemy import (
+    LargeBinary,
+    String,
+    Date,
+    ForeignKey,
+    Integer,
+    Enum,
+)
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
     mapped_column,
     relationship,
+    composite,
 )
 
 from database.enums import (
@@ -17,30 +24,30 @@ from database.enums import (
     CompetitionType,
     CompetitionFormat,
 )
-from entities.competition import Competition
+from database.sqlalchemy_dict_mixin import SqlAlchemyDictMixin
+from entities.competition import (
+    Competition,
+    CompetitionUrlInfo,
+    get_competition_dict,
+)
 from entities.entity import Entity
 from entities.season import Season
 
 
-class EntityMixin:
-    # TODO: Potentially move to different file
+class BaseModel(DeclarativeBase, SqlAlchemyDictMixin):
+    @property
+    def entity_type(self) -> type[Entity]:
+        raise NotImplementedError(
+            'Corresponding entity type has not been set for '
+            f'model: {self.__class__}.'
+        )
 
     @classmethod
     def from_entity(cls, entity: Entity) -> Self:
-        raise NotImplementedError(
-            'Cannot instantiate model from entity, '
-            'as classmethod: from_entity, is not defined.'
-        )
+        return cls.from_dict(entity.to_dict(deep=False))
 
     def to_entity(self) -> Entity:
-        raise NotImplementedError(
-            'Cannot create entity from model, '
-            'as method: to_entity is not defined.'
-        )
-
-
-class BaseModel(DeclarativeBase, EntityMixin):
-    pass
+        return self.entity_type.from_dict(self.to_dict())
 
 
 class PlayerModel(BaseModel):
@@ -82,7 +89,7 @@ class TeamInstanceModel(BaseModel):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     team_id: Mapped[int] = mapped_column(ForeignKey('team.id'))
-    # fixture_id: Mapped[int] = mapped_column(ForeignKey('fixture.id'))
+    fixture_id: Mapped[int] = mapped_column(ForeignKey('fixture.id'))
 
     team: Mapped['TeamModel'] = relationship()
     players: Mapped[list['PlayerInstanceModel']] = relationship(
@@ -90,7 +97,7 @@ class TeamInstanceModel(BaseModel):
     )
 
 
-class CompetitionModel(BaseModel, EntityMixin):
+class CompetitionModel(BaseModel):
     __tablename__ = 'competition'
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -98,7 +105,7 @@ class CompetitionModel(BaseModel, EntityMixin):
     alt_name: Mapped[str] = mapped_column(String(30))
     gender: Mapped[Gender] = mapped_column(Enum(Gender))
     country: Mapped[Optional[str]] = mapped_column(String(30))
-    tier: Mapped[Optional[int]] = mapped_column(Integer())
+    tier: Mapped[Optional[int]] = mapped_column(Integer)
     competition_type: Mapped[CompetitionType] = mapped_column(
         Enum(CompetitionType)
     )
@@ -106,40 +113,26 @@ class CompetitionModel(BaseModel, EntityMixin):
         Enum(CompetitionFormat)
     )
     team_type: Mapped[TeamType] = mapped_column(Enum(TeamType))
+    url_number: Mapped[int] = mapped_column(Integer)
+    url_name: Mapped[str] = mapped_column(String(30))
 
-    @classmethod
-    def from_entity(cls, entity: Entity) -> Self:
-        return cls(**asdict(entity))
+    url_info: Mapped[CompetitionUrlInfo] = composite('url_number', 'url_name')
 
-    def to_entity(self) -> Entity:
-        return Competition(
-            id=self.id,
-            name=self.name,
-            alt_name=self.alt_name,
-            gender=self.gender,
-            country=self.country,
-            tier=self.tier,
-            competition_type=self.competition_type,
-            competition_format=self.competition_format,
-            team_type=self.team_type,
-        )
+    @property
+    def entity_type(self) -> type[Entity]:
+        return Competition
 
 
-class SeasonModel(BaseModel, EntityMixin):
+class SeasonModel(BaseModel):
     __tablename__ = 'season'
 
     id: Mapped[int] = mapped_column(primary_key=True)
     from_year: Mapped[int] = mapped_column(Integer())
     to_year: Mapped[int] = mapped_column(Integer())
 
-    @classmethod
-    def from_entity(cls, entity: Entity) -> Self:
-        return cls(**asdict(entity))
-
-    def to_entity(self) -> Entity:
-        return Season(
-            id=self.id, from_year=self.from_year, to_year=self.to_year
-        )
+    @property
+    def entity_type(self) -> type[Entity]:
+        return Season
 
 
 class FixtureModel(BaseModel):
@@ -164,3 +157,10 @@ class FixtureModel(BaseModel):
     away_team: Mapped['TeamInstanceModel'] = relationship(
         foreign_keys=away_team_id
     )
+
+
+if __name__ == '__main__':
+    competition_dict = get_competition_dict()
+    competition = competition_dict['premier_league']
+    model = CompetitionModel.from_entity(competition)
+    pass

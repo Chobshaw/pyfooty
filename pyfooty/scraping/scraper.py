@@ -2,7 +2,11 @@ import logging
 import re
 from typing import Iterable, Literal
 import requests
-from entities.competition import Competition, get_competition_dict
+from entities.competition import (
+    Competition,
+    CompetitionUrlInfo,
+    get_competition_dict,
+)
 
 from entities.season import Season, season_range
 
@@ -107,3 +111,22 @@ class FootballScraper:
         if competition is None:
             raise CompetitionNotSupportedError(competition_name)
         return competition
+
+    def _get_season_url(
+        self,
+        competition_url_info: CompetitionUrlInfo,
+        season: Season | str | int,
+    ) -> str:
+        return (
+            f'{constants.BASE_DATA_URL}/{self.location_url}/comps/'
+            f'{competition_url_info.number}/{season}/{season}-'
+            f'{competition_url_info.name}-Stats'
+        )
+
+    def scrape_teams(
+        self, competition_name: str, season: Season | str | int = Season()
+    ) -> list[Team]:
+        competition = self.scrape_competition(competition_name)
+        season_url = self._get_season_url(
+            competition_url_info=competition.url_info, season=season
+        )

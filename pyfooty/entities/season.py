@@ -1,20 +1,13 @@
 from __future__ import annotations
 
-from datetime import datetime
-from functools import cache
 from typing import Iterator, Literal, Optional, Self
 from attrs import frozen, field, validators
+from entities.utils import get_current_year
 
 from scraping._local_utils import _split_on_dash_or_endash
 
-
 MINIMUM_VALID_YEAR = 2_000
 ENDASH = chr(8211)
-
-
-@cache
-def get_current_year() -> int:
-    return datetime.utcnow().year
 
 
 @frozen(order=True)

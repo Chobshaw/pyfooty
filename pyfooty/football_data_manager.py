@@ -24,12 +24,12 @@ class FootballDataManager:
             )
         except CompetitionNotFoundError:
             try:
-                competition_data = self.scraper.scrape_competition(
+                competition = self.scraper.scrape_competition(
                     competition_name=competition_name
                 )
             except CompetitionNotSupportedError:
                 return
-            return self.repository.add_competition(competition_data)
+            return self.repository.add_competition(competition)
 
     def _process_competition_seasons(
         self,
@@ -40,7 +40,7 @@ class FootballDataManager:
         for season in season_range(from_season, to_season):
             season = self.repository.get_or_create_season(season)
             teams = self.scraper.scrape_teams(
-                competition=competition, season=season
+                competition_name=competition.name, season=season
             )
             teams = self.repository.get_or_create_teams(teams)
 
